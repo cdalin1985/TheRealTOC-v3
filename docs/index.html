@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Command Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #050505;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+        
+        .header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #1a1a1a;
+            position: sticky;
+            top: 0;
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #71717a;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+        
+        .canvas {
+            padding: 40px;
+            min-width: 1400px;
+        }
+        
+        .mind-map {
+            display: flex;
+            gap: 60px;
+            align-items: flex-start;
+        }
+        
+        .center-node {
+            flex-shrink: 0;
+            width: 200px;
+            padding: 24px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+        }
+        
+        .center-node .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .center-node h2 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .center-node .status {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+        
+        .branches {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .branch {
+            min-width: 300px;
+            max-width: 350px;
+        }
+        
+        .branch-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #0f0f0f;
+            border-radius: 12px;
+            border: 1px solid #1a1a1a;
+            margin-bottom: 16px;
+        }
+        
+        .branch-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .branch-title {
+            flex: 1;
+        }
+        
+        .branch-title h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .branch-title span {
+            font-size: 12px;
+            color: #71717a;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .status-progress { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+        .status-planned { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-idea { background: rgba(161, 161, 170, 0.15); color: #a1a1aa; }
+        
+        .nodes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-left: 20px;
+            border-left: 2px solid #1a1a1a;
+        }
+        
+        .node {
+            padding: 16px;
+            background: #0f0f0f;
+            border-radius: 12px;
+            border: 1px solid #1a1a1a;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .node:hover {
+            border-color: #6366f1;
+            transform: translateX(4px);
+        }
+        
+        .node-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .node-icon {
+            font-size: 18px;
+        }
+        
+        .node h4 {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .node p {
+            font-size: 12px;
+            color: #71717a;
+            line-height: 1.5;
+        }
+        
+        .node-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #1a1a1a;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #a1a1aa;
+        }
+        
+        .connections {
+            position: absolute;
+            pointer-events: none;
+        }
+        
+        .legend {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f0f0f;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid #1a1a1a;
+        }
+        
+        .legend h4 {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #71717a;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+        
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 32px;
+            padding: 20px 32px;
+            background: #0f0f0f;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #6366f1;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #71717a;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Project Command Center</h1>
+        <p>Visual overview of all active projects and initiatives</p>
+    </div>
+    
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-value">4</span>
+            <span class="stat-label">Active Projects</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">In Progress</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Skills Built</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">12</span>
+            <span class="stat-label">GitHub Branches</span>
+        </div>
+    </div>
+    
+    <div class="canvas">
+        <div class="mind-map">
+            <!-- Center Node -->
+            <div class="center-node">
+                <div class="icon">🎯</div>
+                <h2>TheRealTOC</h2>
+                <div class="status">Pool League Platform</div>
+            </div>
+            
+            <!-- Branches -->
+            <div class="branches">
+                <!-- Mobile App Branch -->
+                <div class="branch">
+                    <div class="branch-header">
+                        <div class="branch-icon" style="background: rgba(99, 102, 241, 0.15);">📱</div>
+                        <div class="branch-title">
+                            <h3>Mobile App</h3>
+                            <span>React Native / Expo</span>
+                        </div>
+                        <span class="status-badge status-progress">In Progress</span>
+                    </div>
+                    <div class="nodes">
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">🏆</span>
+                                <h4>Pool League Core</h4>
+                            </div>
+                            <p>King of the Hill ranking system with challenge validation</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📍 feature/pool-league-core</span>
+                                <span class="meta-item">✅ Complete</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">⚔️</span>
+                                <h4>Challenge System</h4>
+                            </div>
+                            <p>Swipe cards, challenge validation, 24h cooldown</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📍 v3 base</span>
+                                <span class="meta-item">✅ Complete</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">💰</span>
+                                <h4>Payment Tracking</h4>
+                            </div>
+                            <p>$5/match, $10/month minimum, auto-tracking</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📍 feature/pool-league-core</span>
+                                <span class="meta-item">🔄 In Progress</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">🎨</span>
+                                <h4>Enhanced UX</h4>
+                            </div>
+                            <p>120fps animations, Skia graphics, dark theme</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📍 feature/enhanced-ux</span>
+                                <span class="meta-item">✅ Complete</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Tools Branch -->
+                <div class="branch">
+                    <div class="branch-header">
+                        <div class="branch-icon" style="background: rgba(168, 85, 247, 0.15);">🤖</div>
+                        <div class="branch-title">
+                            <h3>AI Tools</h3>
+                            <span>OpenClaw Skills</span>
+                        </div>
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="nodes">
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">🎨</span>
+                                <h4>Visual Designer</h4>
+                            </div>
+                            <p>Canva-like design tool for social posts, thumbnails, cards</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📦 visual-designer.skill</span>
+                                <span class="meta-item">✅ Complete</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">📊</span>
+                                <h4>Command Center</h4>
+                            </div>
+                            <p>This visualization - project overview dashboard</p>
+                            <div class="node-meta">
+                                <span class="meta-item">📄 HTML/JS</span>
+                                <span class="meta-item">🆕 New</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contractor Tools Branch -->
+                <div class="branch">
+                    <div class="branch-header">
+                        <div class="branch-icon" style="background: rgba(34, 197, 94, 0.15);">🔧</div>
+                        <div class="branch-title">
+                            <h3>Contractor Tools</h3>
+                            <span>Tile Installation</span>
+                        </div>
+                        <span class="status-badge status-idea">Idea</span>
+                    </div>
+                    <div class="nodes">
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">📐</span>
+                                <h4>LiDAR Estimates</h4>
+                            </div>
+                            <p>iPhone LiDAR scanning for accurate tile measurements</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Concept</span>
+                                <span class="meta-item">⏳ Planned</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">🎨</span>
+                                <h4>Visual Layout Tool</h4>
+                            </div>
+                            <p>Customer sees realistic preview of finished installation</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Concept</span>
+                                <span class="meta-item">⏳ Planned</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">📋</span>
+                                <h4>Auto-Quote Generator</h4>
+                            </div>
+                            <p>Material + labor calculations from scan data</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Concept</span>
+                                <span class="meta-item">⏳ Planned</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Business Ideas Branch -->
+                <div class="branch">
+                    <div class="branch-header">
+                        <div class="branch-icon" style="background: rgba(245, 158, 11, 0.15);">💡</div>
+                        <div class="branch-title">
+                            <h3>Business Ideas</h3>
+                            <span>AI Workflows</span>
+                        </div>
+                        <span class="status-badge status-planned">Exploring</span>
+                    </div>
+                    <div class="nodes">
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">🎙️</span>
+                                <h4>Podcast Production</h4>
+                            </div>
+                            <p>AI transcription, clip extraction, show notes, social posts</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Research</span>
+                                <span class="meta-item">📊 Evaluating</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">📈</span>
+                                <h4>Crypto Research</h4>
+                            </div>
+                            <p>AI monitoring social, on-chain, sentiment analysis</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Research</span>
+                                <span class="meta-item">📊 Evaluating</span>
+                            </div>
+                        </div>
+                        <div class="node">
+                            <div class="node-header">
+                                <span class="node-icon">📝</span>
+                                <h4>Sales Outreach</h4>
+                            </div>
+                            <p>Hyper-personalized cold emails at scale</p>
+                            <div class="node-meta">
+                                <span class="meta-item">💡 Research</span>
+                                <span class="meta-item">📊 Evaluating</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <h4>Status Legend</h4>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #22c55e;"></div>
+            <span>Complete</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #6366f1;"></div>
+            <span>In Progress</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #f59e0b;"></div>
+            <span>Planned</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #a1a1aa;"></div>
+            <span>Idea</span>
+        </div>
+    </div>
+</body>
+</html>
